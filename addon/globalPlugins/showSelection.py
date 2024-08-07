@@ -65,10 +65,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 	# Selection unchanged or review does not follow caret
 	readingInfo: textInfos.TextInfo = api.getReviewPosition().copy()
 	readingInfo.expand(self._getReadingUnit())
-	if (
-		readingInfo.start >= info.end
-		or readingInfo.end <= info.start
-	):
+	if readingInfo.start >= info.end or readingInfo.end <= info.start:
 		# Reading unit containing review position is outside of selection
 		return self._collapsedReviewPosition()
 	else:
@@ -108,8 +105,7 @@ def _collapsedReviewPosition(self) -> textInfos.TextInfo:
 
 
 def update(self) -> None:
-	"""Updates this region.
-	"""
+	"""Updates this region."""
 	self._fakeSelection = self._getSelection()
 	if self._readingUnitContainsSelectedCharacters:
 		# Braille cursor position is at most self._currentContentPos
@@ -119,18 +115,22 @@ def update(self) -> None:
 		# If it detects selection brailleCursorPos is None.
 		self._fakeSelection = self._collapsedReviewPosition()
 		super(ReviewTextInfoRegion, self).update()
-		maxPos: int = self._currentContentPos
-		scrollPos: int = self.brailleCursorPos if self.brailleCursorPos < maxPos - 1 else maxPos - 1
-		self._fakeSelection = fakeSelection
-		# Update region with selection
-		super(ReviewTextInfoRegion, self).update()
-		# Note: brailleSelectionStart and brailleSelectionEnd are used here to
-		# define where braille display should be scrolled based on review position
-		# within reading unit which contains at least one selected character. They
-		# are also used in scrollToCursorOrSelection function when there is selection
-		# so when using them here, there is no need to modify that function.
-		self.brailleSelectionStart = scrollPos
-		self.brailleSelectionEnd = scrollPos + 1
+		if self._currentContentPos:
+			scrollPos: int = (
+				self.brailleCursorPos
+				if self.brailleCursorPos < self._currentContentPos - 1
+				else self._currentContentPos - 1
+			)
+			self._fakeSelection = fakeSelection
+			# Update region with selection
+			super(ReviewTextInfoRegion, self).update()
+			# Note: brailleSelectionStart and brailleSelectionEnd are used here to
+			# define where braille display should be scrolled based on review position
+			# within reading unit which contains at least one selected character. They
+			# are also used in scrollToCursorOrSelection function when there is selection
+			# so when using them here, there is no need to modify that function.
+			self.brailleSelectionStart = scrollPos
+			self.brailleSelectionEnd = scrollPos + 1
 	else:
 		super(ReviewTextInfoRegion, self).update()
 	self._fakeSelection = None
@@ -153,10 +153,7 @@ def _routeToTextInfoHelper(self, info: textInfos.TextInfo) -> None:
 
 
 def _selectionMovementScriptHelper(
-		self,
-		unit: str | None = None,
-		direction: int | None = None,
-		toPosition: str | None = None
+	self, unit: str | None = None, direction: int | None = None, toPosition: str | None = None
 ) -> None:
 	"""Helper function.
 	:param unit: movement unit
@@ -218,7 +215,6 @@ def reportSelectionChange(self, oldTextInfo: textInfos.TextInfo) -> None:
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
-
 	def __init__(self):
 		"""Constructor.
 		Some class variables are added and replaced to get selection to be shown.
