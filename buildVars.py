@@ -23,11 +23,12 @@ addon_info = {
 	"addon_summary": _("Show selection when braille is tethered to review"),
 	# Add-on description
 	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
-	"addon_description": _("""This is an experimental test version which may have
-or cause allkinds of issues. It Shows selection with dots 7 and 8 in edit
-controls and documents when braille is tethered to review."""),
+	"addon_description": _("""This is a beta version, and there may be issues.
+There are likely very few testers which means that more or less use cases are
+not tested. One such case is using braille input. It Shows selection with
+dots 7 and 8 in edit controls and documents when braille is tethered to review."""),
 	# version
-	"addon_version": "2024.0827.0",
+	"addon_version": "2024.0909.0",
 	# Author(s)
 	"addon_author": "Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support
@@ -43,7 +44,7 @@ controls and documents when braille is tethered to review."""),
 	# Add-on update channel (default is None, denoting stable releases,
 	# and for development releases, use "dev".)
 	# Do not change unless you know what you are doing!
-	"addon_updateChannel": "dev",
+	"addon_updateChannel": "beta",
 	# Add-on license such as GPL 2
 	"addon_license": "GPL v2",
 	# URL for the license document the ad-on is licensed under

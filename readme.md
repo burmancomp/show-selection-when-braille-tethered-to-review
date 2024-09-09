@@ -1,8 +1,8 @@
-# ShowSelectionWhenBrailleTetheredToReview
+# Show selection when braille is tethered to review
 
 ## Good to know before using this addon
 
-This is an experimental test version which may have or cause allkinds of issues.
+This is a beta version, and there may be issues. There are likely very few testers which means that more or less use cases are not tested. One such case is using braille input.
 
 When this addon is enabled:
 
