@@ -23,7 +23,6 @@ from editableText import (
 	EditableText,
 	EditableTextWithoutAutoSelectDetection,
 )
-from logHandler import log
 
 
 def _selectionHelper(self) -> textInfos.TextInfo:
@@ -65,7 +64,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 	# Selection unchanged or review does not follow caret
 	readingInfo: textInfos.TextInfo = api.getReviewPosition().copy()
 	readingInfo.expand(self._getReadingUnit())
-	if readingInfo.start >= info.end or readingInfo.end <= info.start:
+	if readingInfo.start > info.end or readingInfo.end < info.start:
 		# Reading unit containing review position is outside of selection
 		return self._collapsedReviewPosition()
 	else:
@@ -115,15 +114,18 @@ def update(self) -> None:
 		# If it detects selection brailleCursorPos is None.
 		self._fakeSelection = self._collapsedReviewPosition()
 		super(ReviewTextInfoRegion, self).update()
-		if self._currentContentPos:
-			scrollPos: int = (
-				self.brailleCursorPos
-				if self.brailleCursorPos < self._currentContentPos - 1
-				else self._currentContentPos - 1
-			)
-			self._fakeSelection = fakeSelection
-			# Update region with selection
-			super(ReviewTextInfoRegion, self).update()
+		scrollPos: int = (
+			self.brailleCursorPos
+			if self.brailleCursorPos <= self._currentContentPos - 1
+			else self._currentContentPos - 1
+		)
+		if scrollPos < 0:
+			scrollPos = 0
+		# Update region with selection
+		self._fakeSelection = fakeSelection
+		super(ReviewTextInfoRegion, self).update()
+		# Update succeeded
+		if self.brailleCursorPos is None:
 			# Note: brailleSelectionStart and brailleSelectionEnd are used here to
 			# define where braille display should be scrolled based on review position
 			# within reading unit which contains at least one selected character. They
@@ -131,6 +133,10 @@ def update(self) -> None:
 			# so when using them here, there is no need to modify that function.
 			self.brailleSelectionStart = scrollPos
 			self.brailleSelectionEnd = scrollPos + 1
+		# Failed to detect selection, revert to review position
+		else:
+			self._fakeSelection = self._collapsedReviewPosition()
+			super(ReviewTextInfoRegion, self).update()
 	else:
 		super(ReviewTextInfoRegion, self).update()
 	self._fakeSelection = None
@@ -176,7 +182,6 @@ def _selectionMovementScriptHelper(
 	CursorManager._originalSelectionMovementScriptHelper(self, unit, direction, toPosition)
 	currentSelection = self.selection
 	if oldSelection == currentSelection:
-		log.debug("Restore review position")
 		api.setReviewPosition(reviewPosition)
 
 
@@ -192,7 +197,6 @@ def detectPossibleSelectionChange(self) -> None:
 		return
 	# Selection change was not always updated to braille.
 	# Processing pending events seems to help.
-	log.debug("Process pending events")
 	api.processPendingEvents(processEventQueue=False)
 
 
@@ -210,7 +214,6 @@ def reportSelectionChange(self, oldTextInfo: textInfos.TextInfo) -> None:
 		return
 	# Braille did not always update at least in word 2019 with IAccessible
 	if not eventHandler.isPendingEvents("caret"):
-		log.debug("Execute event_caret")
 		self.event_caret()
 
 

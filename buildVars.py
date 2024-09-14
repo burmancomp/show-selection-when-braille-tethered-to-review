@@ -25,10 +25,11 @@ addon_info = {
 	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
 	"addon_description": _("""This is a beta version, and there may be issues.
 There are likely very few testers which means that more or less use cases are
-not tested. One such case is using braille input. It Shows selection with
-dots 7 and 8 in edit controls and documents when braille is tethered to review."""),
+not tested. One such case is using braille input.
+It Shows selection with dots 7 and 8 in edit controls and documents when
+braille is tethered to review."""),
 	# version
-	"addon_version": "2024.0909.0",
+	"addon_version": "2024.0914.0",
 	# Author(s)
 	"addon_author": "Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support
