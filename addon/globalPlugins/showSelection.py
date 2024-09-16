@@ -31,7 +31,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 	review position (when there is no selection or review position is
 	outside of selection).
 	"""
-	self._readingUnitContainsSelectedCharacters = self._selectionChanged = False
+	self._readingUnitContainsSelectedCharacters = False
 	info: textInfos.TextInfo
 	try:
 		info = self.obj.makeTextInfo(textInfos.POSITION_SELECTION)
@@ -60,7 +60,6 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 			info.collapse(end=self.obj.isTextSelectionAnchoredAtStart)
 			# Enqueue to avoid recursion error when reviewing different object
 			queueHandler.queueFunction(queueHandler.eventQueue, self._setCursor, info)
-			self._selectionChanged = True
 			return self._fakeSelection
 	# Selection unchanged or review does not follow caret
 	readingInfo: textInfos.TextInfo = api.getReviewPosition().copy()
@@ -81,12 +80,14 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 
 def _getSelection(self) -> textInfos.TextInfo:
 	"""Gets selection for use in update function.
-	:return: when review position is within selection, whole real selection
+	:return: if _fakeSelection is not None, it is returned. This makes possible
+	to pretend that there is no selection (needed in update function).
+	when review position is within selection, whole real selection
 	is returned if it fits to reading unit, or part of it if it does not.
 	When review position is outside of selection or there is no selection
 	review position is returned.
-	Logic which defines what to return is in _selectionHelper
-	and update functions.
+	Logic which defines what to return, when _fakeSelection is None,
+	is in _selectionHelper function.
 	"""
 	if self._fakeSelection is not None:
 		return self._fakeSelection
@@ -107,10 +108,10 @@ def _collapsedReviewPosition(self) -> textInfos.TextInfo:
 def update(self) -> None:
 	"""Updates this region."""
 	self._fakeSelection = self._getSelection()
+	# Within selection
 	if self._readingUnitContainsSelectedCharacters:
-		# Get braille cursor position so that braille can be scrolled correctly
-		# when selection is unchanged.
 		fakeSelection: textInfos.TextInfo = self._fakeSelection.copy()
+		# Get braille cursor position so that braille can be scrolled correctly.
 		# It is obtained when parent class update function detects cursor.
 		# If it detects selection brailleCursorPos is None.
 		self._fakeSelection = self._collapsedReviewPosition()
@@ -121,22 +122,19 @@ def update(self) -> None:
 		super(ReviewTextInfoRegion, self).update()
 		# Update succeeded
 		if self.brailleCursorPos is None:
-			# Note: brailleSelectionStart and brailleSelectionEnd are used here to
-			# define where braille display should be scrolled based on review position
-			# within reading unit which contains at least one selected character. They
-			# are also used in scrollToCursorOrSelection function when there is selection
-			# so when using them here, there is no need to modify that function.
-			# They should be correct when selection changes.
-			if not self._selectionChanged:
-				scrollPos = brailleCursorPos
-				if scrollPos >= self.brailleSelectionEnd:
-					scrollPos = self.brailleSelectionEnd - 1
-				self.brailleSelectionStart = scrollPos
-				self.brailleSelectionEnd = scrollPos + 1
+			# brailleSelectionStart and brailleSelectionEnd are set here to define
+			# appropriate braille display scrolling when moving to reading unit
+			# which contains one or more selected characters.
+			# They are then used in braille.BrailleHandler.scrollToCursorOrSelection
+			# function for this.
+			scrollPos: int = min(brailleCursorPos, len(self.brailleCells) - 1)
+			self.brailleSelectionStart = scrollPos
+			self.brailleSelectionEnd = scrollPos + 1
 		# Failed to detect selection, revert to review position
 		else:
 			self._fakeSelection = self._collapsedReviewPosition()
 			super(ReviewTextInfoRegion, self).update()
+	# Selection changed, outside of selection or no selection
 	else:
 		super(ReviewTextInfoRegion, self).update()
 	self._fakeSelection = None
