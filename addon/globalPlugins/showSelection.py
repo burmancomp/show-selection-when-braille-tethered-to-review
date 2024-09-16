@@ -31,7 +31,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 	review position (when there is no selection or review position is
 	outside of selection).
 	"""
-	self._readingUnitContainsSelectedCharacters = False
+	self._readingUnitContainsSelectedCharacters = self._selectionChanged = False
 	info: textInfos.TextInfo
 	try:
 		info = self.obj.makeTextInfo(textInfos.POSITION_SELECTION)
@@ -60,6 +60,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 			info.collapse(end=self.obj.isTextSelectionAnchoredAtStart)
 			# Enqueue to avoid recursion error when reviewing different object
 			queueHandler.queueFunction(queueHandler.eventQueue, self._setCursor, info)
+			self._selectionChanged = True
 			return self._fakeSelection
 	# Selection unchanged or review does not follow caret
 	readingInfo: textInfos.TextInfo = api.getReviewPosition().copy()
@@ -68,7 +69,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 		# Reading unit containing review position is outside of selection
 		return self._collapsedReviewPosition()
 	else:
-		# Reading unit contains selected charactersbut all characters are not
+		# Reading unit contains selected characters but all characters are not
 		# necessarily selected
 		if readingInfo.start < self._realSelection.start:
 			readingInfo.start = self._realSelection.start
@@ -107,20 +108,14 @@ def update(self) -> None:
 	"""Updates this region."""
 	self._fakeSelection = self._getSelection()
 	if self._readingUnitContainsSelectedCharacters:
-		# Braille cursor position is at most self._currentContentPos
-		# Get braille cursor position so that braille can be scrolled correctly.
+		# Get braille cursor position so that braille can be scrolled correctly
+		# when selection is unchanged.
 		fakeSelection: textInfos.TextInfo = self._fakeSelection.copy()
 		# It is obtained when parent class update function detects cursor.
 		# If it detects selection brailleCursorPos is None.
 		self._fakeSelection = self._collapsedReviewPosition()
 		super(ReviewTextInfoRegion, self).update()
-		scrollPos: int = (
-			self.brailleCursorPos
-			if self.brailleCursorPos <= self._currentContentPos - 1
-			else self._currentContentPos - 1
-		)
-		if scrollPos < 0:
-			scrollPos = 0
+		brailleCursorPos: int = self.brailleCursorPos
 		# Update region with selection
 		self._fakeSelection = fakeSelection
 		super(ReviewTextInfoRegion, self).update()
@@ -131,8 +126,13 @@ def update(self) -> None:
 			# within reading unit which contains at least one selected character. They
 			# are also used in scrollToCursorOrSelection function when there is selection
 			# so when using them here, there is no need to modify that function.
-			self.brailleSelectionStart = scrollPos
-			self.brailleSelectionEnd = scrollPos + 1
+			# They should be correct when selection changes.
+			if not self._selectionChanged:
+				scrollPos = brailleCursorPos
+				if scrollPos >= self.brailleSelectionEnd:
+					scrollPos = self.brailleSelectionEnd - 1
+				self.brailleSelectionStart = scrollPos
+				self.brailleSelectionEnd = scrollPos + 1
 		# Failed to detect selection, revert to review position
 		else:
 			self._fakeSelection = self._collapsedReviewPosition()
@@ -226,6 +226,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		ReviewTextInfoRegion._realSelection: textInfos.TextInfo | None = None
 		ReviewTextInfoRegion._fakeSelection: textInfos.TextInfo | None = None
 		ReviewTextInfoRegion._readingUnitContainsSelectedCharacters: bool = False
+		ReviewTextInfoRegion._selectionChanged: bool = False
 		ReviewTextInfoRegion._originalRouteToTextInfo = ReviewTextInfoRegion._routeToTextInfo
 		ReviewTextInfoRegion._routeToTextInfo = _routeToTextInfoHelper
 		ReviewTextInfoRegion._selectionHelper = _selectionHelper
