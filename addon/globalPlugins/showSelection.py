@@ -16,7 +16,6 @@ from braille import (
 )
 from config.configFlags import (
 	BrailleMode,
-	TetherTo,
 )
 from cursorManager import CursorManager
 from editableText import (
@@ -26,54 +25,51 @@ from editableText import (
 
 
 def _selectionHelper(self) -> textInfos.TextInfo:
-	"""Helper function to decide what should be regarded as selection.
-	:return: it may vary between real selection, part of real selection and
+	"""Helper function for _getSelection function.
+	:return: may vary between real selection, part of real selection and
 	review position (when there is no selection or review position is
 	outside of selection).
 	"""
-	self._readingUnitContainsSelectedCharacters = False
-	info: textInfos.TextInfo
 	try:
-		info = self.obj.makeTextInfo(textInfos.POSITION_SELECTION)
+		info: textInfos.TextInfo = self.obj.makeTextInfo(textInfos.POSITION_SELECTION)
 	except (LookupError, RuntimeError):
 		self._realSelection = None
 		return self._collapsedReviewPosition()
+	# Cursor
 	if info.isCollapsed:
-		# Cursor
 		self._realSelection = None
 		return self._collapsedReviewPosition()
-	# Selection
+	# Selection changed
 	if (
 		self._realSelection is None
 		or self._realSelection.start != info.start
 		or self._realSelection.end != info.end
 	):
-		# Selection changed
-		self._realSelection = info.copy()
+		self._realSelection = info
+		# Update also review position if review follows caret
 		if config.conf["reviewCursor"]["followCaret"]:
-			# Update also review position
-			self._fakeSelection = info.copy()
+			info = info.copy()
 			if self.obj.isTextSelectionAnchoredAtStart:
 				# The end of the range is exclusive, so make it inclusive first.
 				info.move(textInfos.UNIT_CHARACTER, -1, "end")
 			# Collapse the selection to the unanchored end which is also review position.
 			info.collapse(end=self.obj.isTextSelectionAnchoredAtStart)
-			# Enqueue to avoid recursion error when reviewing different object
+			# To avoid recursion error when reviewing different object
 			queueHandler.queueFunction(queueHandler.eventQueue, self._setCursor, info)
-			return self._fakeSelection
+			return self._realSelection
 	# Selection unchanged or review does not follow caret
-	readingInfo: textInfos.TextInfo = api.getReviewPosition().copy()
+	readingInfo: textInfos.TextInfo = self._collapsedReviewPosition()
 	readingInfo.expand(self._getReadingUnit())
+	# Reading unit containing review position is outside of selection
 	if readingInfo.start > info.end or readingInfo.end < info.start:
-		# Reading unit containing review position is outside of selection
 		return self._collapsedReviewPosition()
+	# Reading unit contains selected characters but all characters are not
+	# necessarily selected
 	else:
-		# Reading unit contains selected characters but all characters are not
-		# necessarily selected
-		if readingInfo.start < self._realSelection.start:
-			readingInfo.start = self._realSelection.start
-		if readingInfo.end > self._realSelection.end:
-			readingInfo.end = self._realSelection.end
+		if readingInfo.start < info.start:
+			readingInfo.start = info.start
+		if readingInfo.end > info.end:
+			readingInfo.end = info.end
 		self._readingUnitContainsSelectedCharacters = True
 		return readingInfo
 
@@ -82,12 +78,8 @@ def _getSelection(self) -> textInfos.TextInfo:
 	"""Gets selection for use in update function.
 	:return: if _fakeSelection is not None, it is returned. This makes possible
 	to pretend that there is no selection (needed in update function).
-	when review position is within selection, whole real selection
-	is returned if it fits to reading unit, or part of it if it does not.
-	When review position is outside of selection or there is no selection
-	review position is returned.
-	Logic which defines what to return, when _fakeSelection is None,
-	is in _selectionHelper function.
+	Logic which defines what to return, when _fakeSelection is None, is in
+	_selectionHelper function.
 	"""
 	if self._fakeSelection is not None:
 		return self._fakeSelection
@@ -101,16 +93,18 @@ def _collapsedReviewPosition(self) -> textInfos.TextInfo:
 	info: textInfos.TextInfo = api.getReviewPosition().copy()
 	# Info should be collapsed, but it is not always, at least when
 	# switching from focus mode to browse mode.
-	info.collapse()
+	if not info.isCollapsed:
+		info.collapse()
 	return info
 
 
 def update(self) -> None:
 	"""Updates this region."""
-	self._fakeSelection = self._getSelection()
+	self._fakeSelection = None
+	self._readingUnitContainsSelectedCharacters = False
+	fakeSelection: textInfos.TextInfo = self._getSelection()
 	# Within selection
 	if self._readingUnitContainsSelectedCharacters:
-		fakeSelection: textInfos.TextInfo = self._fakeSelection.copy()
 		# Get braille cursor position so that braille can be scrolled correctly.
 		# It is obtained when parent class update function detects cursor.
 		# If it detects selection brailleCursorPos is None.
@@ -137,7 +131,6 @@ def update(self) -> None:
 	# Selection changed, outside of selection or no selection
 	else:
 		super(ReviewTextInfoRegion, self).update()
-	self._fakeSelection = None
 
 
 def _routeToTextInfoHelper(self, info: textInfos.TextInfo) -> None:
@@ -166,19 +159,15 @@ def _selectionMovementScriptHelper(
 	In addition, to execution of original function, review position is stored
 	and restored when appropriate.
 	"""
-	if (
-		not braille.handler.enabled
-		or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value
-		or config.conf["braille"]["tetherTo"] != TetherTo.REVIEW.value
-	):
+	if not braille.handler.enabled or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value:
 		# Original function
 		CursorManager._originalSelectionMovementScriptHelper(self, unit, direction, toPosition)
 		return
-	reviewPosition = api.getReviewPosition().copy()
-	oldSelection = self.selection
+	reviewPosition: textInfos.TextInfo = api.getReviewPosition().copy()
+	oldSelection: textInfos.TextInfo = self.selection
 	# Original function
 	CursorManager._originalSelectionMovementScriptHelper(self, unit, direction, toPosition)
-	currentSelection = self.selection
+	currentSelection: textInfos.TextInfo = self.selection
 	if oldSelection == currentSelection:
 		api.setReviewPosition(reviewPosition)
 
@@ -187,11 +176,7 @@ def detectPossibleSelectionChange(self) -> None:
 	"""If selection has changed, change is spoken and displayed in braille."""
 	# Original function
 	EditableText._detectPossibleSelectionChange(self)
-	if (
-		not braille.handler.enabled
-		or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value
-		or config.conf["braille"]["tetherTo"] != TetherTo.REVIEW.value
-	):
+	if not braille.handler.enabled or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value:
 		return
 	# Selection change was not always updated to braille.
 	# Processing pending events seems to help.
@@ -204,11 +189,7 @@ def reportSelectionChange(self, oldTextInfo: textInfos.TextInfo) -> None:
 	"""
 	# Original function
 	EditableTextWithoutAutoSelectDetection._reportSelectionChange(self, oldTextInfo)
-	if (
-		not braille.handler.enabled
-		or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value
-		or config.conf["braille"]["tetherTo"] != TetherTo.REVIEW.value
-	):
+	if not braille.handler.enabled or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value:
 		return
 	# Braille did not always update at least in word 2019 with IAccessible
 	if not eventHandler.isPendingEvents("caret"):
@@ -224,7 +205,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		ReviewTextInfoRegion._realSelection: textInfos.TextInfo | None = None
 		ReviewTextInfoRegion._fakeSelection: textInfos.TextInfo | None = None
 		ReviewTextInfoRegion._readingUnitContainsSelectedCharacters: bool = False
-		ReviewTextInfoRegion._selectionChanged: bool = False
 		ReviewTextInfoRegion._originalRouteToTextInfo = ReviewTextInfoRegion._routeToTextInfo
 		ReviewTextInfoRegion._routeToTextInfo = _routeToTextInfoHelper
 		ReviewTextInfoRegion._selectionHelper = _selectionHelper
