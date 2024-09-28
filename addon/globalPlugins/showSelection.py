@@ -22,6 +22,9 @@ from editableText import (
 	EditableText,
 	EditableTextWithoutAutoSelectDetection,
 )
+from NVDAObjects import NVDAObject
+from treeInterceptorHandler import DocumentTreeInterceptor
+from typing import Callable
 
 
 def _selectionHelper(self) -> textInfos.TextInfo:
@@ -33,11 +36,11 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 	try:
 		info: textInfos.TextInfo = self.obj.makeTextInfo(textInfos.POSITION_SELECTION)
 	except (LookupError, RuntimeError):
-		self._realSelection = None
+		self._realSelection = self._reviewPos = None
 		return self._collapsedReviewPosition()
 	# Cursor
 	if info.isCollapsed:
-		self._realSelection = None
+		self._realSelection = self._reviewPos = None
 		return self._collapsedReviewPosition()
 	# Selection changed
 	if (
@@ -48,14 +51,22 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 		self._realSelection = info
 		# Update also review position if review follows caret
 		if config.conf["reviewCursor"]["followCaret"]:
-			info = info.copy()
+			self._reviewPos = info.copy()
 			if self.obj.isTextSelectionAnchoredAtStart:
 				# The end of the range is exclusive, so make it inclusive first.
-				info.move(textInfos.UNIT_CHARACTER, -1, "end")
+				self._reviewPos.move(textInfos.UNIT_CHARACTER, -1, "end")
 			# Collapse the selection to the unanchored end which is also review position.
-			info.collapse(end=self.obj.isTextSelectionAnchoredAtStart)
-			# To avoid recursion error when reviewing different object
-			queueHandler.queueFunction(queueHandler.eventQueue, self._setCursor, info)
+			self._reviewPos.collapse(end=self.obj.isTextSelectionAnchoredAtStart)
+			# Block browse mode because there is no caret event.
+			# At least in word 2019 caret events are fired also when not using UIA
+			# and moving review cursor. Therefore caret event cannot be relied on.
+			# Update review position for browse mode and word.
+			if (isinstance(self.obj, DocumentTreeInterceptor) and not self.obj.passThrough) or (
+				self.obj.appModule.appName == "winword" and config.conf["UIA"]["allowInMSWord"] == 1
+			):
+				queueHandler.queueFunction(queueHandler.eventQueue, api.setReviewPosition, self._reviewPos)
+			elif not eventHandler.isPendingEvents("caret"):
+				eventHandler.queueEvent("caret", self.obj)
 			return self._realSelection
 	# Selection unchanged or review does not follow caret
 	readingInfo: textInfos.TextInfo = self._collapsedReviewPosition()
@@ -203,6 +214,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"""
 		super().__init__()
 		ReviewTextInfoRegion._realSelection: textInfos.TextInfo | None = None
+		ReviewTextInfoRegion._reviewPos: textInfos.TextInfo | None = None
 		ReviewTextInfoRegion._fakeSelection: textInfos.TextInfo | None = None
 		ReviewTextInfoRegion._readingUnitContainsSelectedCharacters: bool = False
 		ReviewTextInfoRegion._originalRouteToTextInfo = ReviewTextInfoRegion._routeToTextInfo
@@ -219,3 +231,20 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			EditableTextWithoutAutoSelectDetection.reportSelectionChange
 		)
 		EditableTextWithoutAutoSelectDetection.reportSelectionChange = reportSelectionChange
+
+	def event_caret(self, obj: NVDAObject, nextHandler: Callable[[], None]) -> None:
+		# When UIA is disabled, cannot rely on caret event in word.
+		if obj.appModule.appName == "winword" and config.conf["UIA"]["allowInMSWord"] == 1:
+			nextHandler()
+			return
+		region = braille.handler.mainBuffer.regions[-1] if braille.handler.mainBuffer.regions else None
+		if region is not None and isinstance(region, ReviewTextInfoRegion) and region.obj == obj:
+			if region._reviewPos is not None and region._reviewPos.obj == api.getFocusObject():
+				queueHandler.queueFunction(queueHandler.eventQueue, api.setReviewPosition, region._reviewPos)
+			elif region._realSelection is not None:
+				region._realSelection = region._reviewPos = None
+				api.setNavigatorObject(api.getFocusObject())
+		nextHandler()
+
+	def event_gainFocus(self, obj: NVDAObject, nextHandler: Callable[[], None]) -> None:
+		self.event_caret(obj, nextHandler)

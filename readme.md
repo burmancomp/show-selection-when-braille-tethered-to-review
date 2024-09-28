@@ -30,8 +30,3 @@ selected characters on the line you are reviewing.
 
 To see selection outside of edit controls, browse mode should be used
 where supported.
-
-## Known issues
-
-Occasionally review cursor is positioned to start of selection when
-selection changes or edit control gets focus.
