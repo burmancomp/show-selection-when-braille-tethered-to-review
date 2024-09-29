@@ -9,6 +9,7 @@ import textInfos
 import config
 import eventHandler
 import queueHandler
+import winVersion
 
 from braille import (
 	ReviewTextInfoRegion,
@@ -25,6 +26,7 @@ from editableText import (
 from NVDAObjects import NVDAObject
 from treeInterceptorHandler import DocumentTreeInterceptor
 from typing import Callable
+from logHandler import log
 
 
 def _selectionHelper(self) -> textInfos.TextInfo:
@@ -61,8 +63,18 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 			# At least in word 2019 caret events are fired also when not using UIA
 			# and moving review cursor. Therefore caret event cannot be relied on.
 			# Update review position for browse mode and word.
-			if (isinstance(self.obj, DocumentTreeInterceptor) and not self.obj.passThrough) or (
-				self.obj.appModule.appName == "winword" and config.conf["UIA"]["allowInMSWord"] == 1
+			if (
+				(isinstance(self.obj, DocumentTreeInterceptor) and not self.obj.passThrough)
+				or (
+					self.obj.appModule.appName == "winword"
+					and winVersion.getWinVer() >= winVersion.WIN11
+					and config.conf["UIA"]["allowInMSWord"] == 1
+				)
+				or (
+					self.obj.appModule.appName == "winword"
+					and winVersion.getWinVer() < winVersion.WIN11
+					and config.conf["UIA"]["allowInMSWord"] < 3
+				)
 			):
 				queueHandler.queueFunction(queueHandler.eventQueue, api.setReviewPosition, self._reviewPos)
 			elif not eventHandler.isPendingEvents("caret"):
@@ -203,7 +215,18 @@ def reportSelectionChange(self, oldTextInfo: textInfos.TextInfo) -> None:
 	if not braille.handler.enabled or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value:
 		return
 	# Braille did not always update at least in word 2019 with IAccessible
-	if not eventHandler.isPendingEvents("caret"):
+	log.debug("is caret event needed")
+	if (
+		self.appModule.appName == "winword"
+		and winVersion.getWinVer() >= winVersion.WIN11
+		and config.conf["UIA"]["allowInMSWord"] == 1
+		and not eventHandler.isPendingEvents("caret")
+	) or (
+		self.appModule.appName == "winword"
+		and winVersion.getWinVer() < winVersion.WIN11
+		and config.conf["UIA"]["allowInMSWord"] < 3
+		and not eventHandler.isPendingEvents("caret")
+	):
 		self.event_caret()
 
 
@@ -234,7 +257,16 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def event_caret(self, obj: NVDAObject, nextHandler: Callable[[], None]) -> None:
 		# When UIA is disabled, cannot rely on caret event in word.
-		if obj.appModule.appName == "winword" and config.conf["UIA"]["allowInMSWord"] == 1:
+		log.debug("caret event")
+		if (
+			obj.appModule.appName == "winword"
+			and winVersion.getWinVer() >= winVersion.WIN11
+			and config.conf["UIA"]["allowInMSWord"] == 1
+		) or (
+			obj.appModule.appName == "winword"
+			and winVersion.getWinVer() < winVersion.WIN11
+			and config.conf["UIA"]["allowInMSWord"] < 3
+		):
 			nextHandler()
 			return
 		region = braille.handler.mainBuffer.regions[-1] if braille.handler.mainBuffer.regions else None

@@ -30,3 +30,8 @@ selected characters on the line you are reviewing.
 
 To see selection outside of edit controls, browse mode should be used
 where supported.
+
+## Limitations
+
+* In MS Word when UIA is not used, review cursor may be positioned to the start of selection when edit control gets focus.
+* If there is selection, and then setting review cursor to the position of caret with standard scripts, review cursor is positioned to the start of selection.
