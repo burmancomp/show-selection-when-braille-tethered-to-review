@@ -10,23 +10,23 @@ import config
 import eventHandler
 import queueHandler
 import winVersion
+import globalCommands
 
 from braille import (
 	ReviewTextInfoRegion,
 	_routingShouldMoveSystemCaret,
 )
-from config.configFlags import (
-	BrailleMode,
-)
+from config.configFlags import BrailleMode
 from cursorManager import CursorManager
 from editableText import (
 	EditableText,
 	EditableTextWithoutAutoSelectDetection,
 )
+from globalCommands import GlobalCommands
+from inputCore import InputGesture
 from NVDAObjects import NVDAObject
 from treeInterceptorHandler import DocumentTreeInterceptor
 from typing import Callable
-from logHandler import log
 
 
 def _selectionHelper(self) -> textInfos.TextInfo:
@@ -77,7 +77,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 				)
 			):
 				queueHandler.queueFunction(queueHandler.eventQueue, api.setReviewPosition, self._reviewPos)
-			elif not eventHandler.isPendingEvents("caret"):
+			elif not eventHandler.isPendingEvents("caret", self.obj):
 				eventHandler.queueEvent("caret", self.obj)
 			return self._realSelection
 	# Selection unchanged or review does not follow caret
@@ -192,7 +192,7 @@ def _selectionMovementScriptHelper(
 	CursorManager._originalSelectionMovementScriptHelper(self, unit, direction, toPosition)
 	currentSelection: textInfos.TextInfo = self.selection
 	if oldSelection == currentSelection:
-		api.setReviewPosition(reviewPosition)
+		queueHandler.queueFunction(queueHandler.eventQueue, api.setReviewPosition, reviewPosition)
 
 
 def detectPossibleSelectionChange(self) -> None:
@@ -203,7 +203,14 @@ def detectPossibleSelectionChange(self) -> None:
 		return
 	# Selection change was not always updated to braille.
 	# Processing pending events seems to help.
-	api.processPendingEvents(processEventQueue=False)
+	region = braille.handler.mainBuffer.regions[-1] if braille.handler.mainBuffer.regions else None
+	if (
+		region is not None
+		and isinstance(region, ReviewTextInfoRegion)
+		and region._realSelection is not None
+		and eventHandler.isPendingEvents("caret", self)
+	):
+		api.processPendingEvents(processEventQueue=False)
 
 
 def reportSelectionChange(self, oldTextInfo: textInfos.TextInfo) -> None:
@@ -215,19 +222,32 @@ def reportSelectionChange(self, oldTextInfo: textInfos.TextInfo) -> None:
 	if not braille.handler.enabled or config.conf["braille"]["mode"] == BrailleMode.SPEECH_OUTPUT.value:
 		return
 	# Braille did not always update at least in word 2019 with IAccessible
-	log.debug("is caret event needed")
 	if (
 		self.appModule.appName == "winword"
 		and winVersion.getWinVer() >= winVersion.WIN11
 		and config.conf["UIA"]["allowInMSWord"] == 1
-		and not eventHandler.isPendingEvents("caret")
+		and not eventHandler.isPendingEvents("caret", self)
 	) or (
 		self.appModule.appName == "winword"
 		and winVersion.getWinVer() < winVersion.WIN11
 		and config.conf["UIA"]["allowInMSWord"] < 3
-		and not eventHandler.isPendingEvents("caret")
+		and not eventHandler.isPendingEvents("caret", self)
 	):
-		self.event_caret()
+		region = braille.handler.mainBuffer.regions[-1] if braille.handler.mainBuffer.regions else None
+		if (
+			region is not None
+			and isinstance(region, ReviewTextInfoRegion)
+			and region._realSelection is not None
+		):
+			eventHandler.queueEvent("caret", self)
+
+
+def script_navigatorObject_toFocus(self, gesture: InputGesture) -> None:
+	region = braille.handler.mainBuffer.regions[-1] if braille.handler.mainBuffer.regions else None
+	# Set region._realSelection to None to finally set correct review position
+	if region is not None and isinstance(region, ReviewTextInfoRegion) and region._realSelection is not None:
+		region._realSelection = None
+	GlobalCommands._script_navigatorObject_toFocus(self, gesture)
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
@@ -254,10 +274,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			EditableTextWithoutAutoSelectDetection.reportSelectionChange
 		)
 		EditableTextWithoutAutoSelectDetection.reportSelectionChange = reportSelectionChange
+		GlobalCommands._script_navigatorObject_toFocus = GlobalCommands.script_navigatorObject_toFocus
+		GlobalCommands.script_navigatorObject_toFocus = script_navigatorObject_toFocus
+		globalCommands.commands = globalCommands.GlobalCommands()
 
 	def event_caret(self, obj: NVDAObject, nextHandler: Callable[[], None]) -> None:
 		# When UIA is disabled, cannot rely on caret event in word.
-		log.debug("caret event")
 		if (
 			obj.appModule.appName == "winword"
 			and winVersion.getWinVer() >= winVersion.WIN11

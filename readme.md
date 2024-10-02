@@ -2,7 +2,7 @@
 
 ## Good to know before using this addon
 
-This is a beta version, and there may be issues. There are likely very few testers which means that more or less use cases are not tested.
+There are likely very few testers which means that more or less use cases are not tested. This means greater probability of issues.
 
 ## General
 
@@ -31,7 +31,6 @@ selected characters on the line you are reviewing.
 To see selection outside of edit controls, browse mode should be used
 where supported.
 
-## Limitations
+## Known issues
 
 * In MS Word when UIA is not used, review cursor may be positioned to the start of selection when edit control gets focus.
-* If there is selection, and then setting review cursor to the position of caret with standard scripts, review cursor is positioned to the start of selection.
