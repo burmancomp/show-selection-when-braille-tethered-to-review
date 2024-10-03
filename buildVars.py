@@ -29,7 +29,7 @@ not tested.
 This add-on  Shows selection with dots 7 and 8 in edit controls and documents
 when braille is tethered to review."""),
 	# version
-	"addon_version": "2024.1002.0",
+	"addon_version": "2024.1003.0",
 	# Author(s)
 	"addon_author": "Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support
