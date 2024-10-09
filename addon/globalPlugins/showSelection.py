@@ -279,6 +279,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		globalCommands.commands = globalCommands.GlobalCommands()
 
 	def event_caret(self, obj: NVDAObject, nextHandler: Callable[[], None]) -> None:
+		if not config.conf["reviewCursor"]["followCaret"]:
+			nextHandler()
+			return
 		# When UIA is disabled, cannot rely on caret event in word.
 		if (
 			obj.appModule.appName == "winword"
@@ -301,4 +304,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		nextHandler()
 
 	def event_gainFocus(self, obj: NVDAObject, nextHandler: Callable[[], None]) -> None:
-		self.event_caret(obj, nextHandler)
+		if config.conf["reviewCursor"]["followFocus"]:
+			self.event_caret(obj, nextHandler)
+		else:
+			nextHandler()
