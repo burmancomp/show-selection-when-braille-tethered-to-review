@@ -2,7 +2,7 @@
 
 ## Good to know before using this addon
 
-There are likely very few testers which means that more or less use cases are not tested. This means greater probability of issues.
+There are likely very few users which means that more or less use cases are not tested. This means greater probability of issues.
 
 ## General
 
