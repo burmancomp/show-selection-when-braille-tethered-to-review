@@ -26,7 +26,7 @@ addon_info = {
 	"addon_description": _("""This add-on shows selection with dots 7 and 8 in edit controls and documents
 when braille is tethered to review."""),
 	# version
-	"addon_version": "2024.1024.1",
+	"addon_version": "2024.1028.0",
 	# Author(s)
 	"addon_author": "Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support
@@ -36,13 +36,13 @@ when braille is tethered to review."""),
 	# Documentation file name
 	"addon_docFileName": "readme.html",
 	# Minimum NVDA version supported (e.g. "2018.3.0", minor version is optional)
-	"addon_minimumNVDAVersion": "2024.2.0",
+	"addon_minimumNVDAVersion": "2024.4.0",
 	# Last NVDA version supported/tested (e.g. "2018.4.0", ideally more recent than minimum version)
-	"addon_lastTestedNVDAVersion": "2025.1.0",
+	"addon_lastTestedNVDAVersion": "2024.4.0",
 	# Add-on update channel (default is None, denoting stable releases,
 	# and for development releases, use "dev".)
 	# Do not change unless you know what you are doing!
-	"addon_updateChannel": "beta",
+	"addon_updateChannel": None,
 	# Add-on license such as GPL 2
 	"addon_license": "GPL v2",
 	# URL for the license document the ad-on is licensed under
