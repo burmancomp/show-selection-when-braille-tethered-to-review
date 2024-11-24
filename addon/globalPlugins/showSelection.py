@@ -298,6 +298,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if region is not None and isinstance(region, ReviewTextInfoRegion) and region.obj == obj:
 			if region._reviewPos is not None and region._reviewPos.obj == api.getFocusObject():
 				queueHandler.queueFunction(queueHandler.eventQueue, api.setReviewPosition, region._reviewPos)
+				region._reviewPos = None
 			elif region._realSelection is not None:
 				region._realSelection = region._reviewPos = None
 				api.setNavigatorObject(api.getFocusObject())

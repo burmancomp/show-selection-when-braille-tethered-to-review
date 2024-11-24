@@ -26,7 +26,7 @@ addon_info = {
 	"addon_description": _("""This add-on shows selection with dots 7 and 8 in edit controls and documents
 when braille is tethered to review."""),
 	# version
-	"addon_version": "2024.1024.1",
+	"addon_version": "2024.1124.0",
 	# Author(s)
 	"addon_author": "Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support
@@ -71,6 +71,7 @@ excludedFiles = []
 # Base language for the NVDA add-on
 # If your add-on is written in a language other than english, modify this variable.
 # For example, set baseLanguage to "es" if your add-on is primarily written in spanish.
+# You must also edit .gitignore file to specify base language files to be ignored.
 baseLanguage = "en"
 
 # Markdown extensions for add-on documentation
@@ -89,3 +90,12 @@ markdownExtensions = []
 # output (shown in output table list),
 # input (shown in input table list).
 brailleTables = {}
+
+# Custom speech symbol dictionaries
+# Symbol dictionary files reside in the locale folder, e.g. `locale\en`, and are named `symbols-<name>.dic`.
+# If your add-on includes custom speech symbol dictionaries (most will not), fill out this dictionary.
+# Each key is the name of the dictionary,
+# with keys inside recording the following attributes:
+# displayName (name of the speech dictionary  shown to users and translatable),
+# mandatory (True when always enabled, False when not.
+symbolDictionaries = {}
