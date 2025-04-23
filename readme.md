@@ -24,9 +24,9 @@ NVDA Braille category "Move system caret when routing review cursor" setting.
 
 ## Notes
 
-When "Show selection" is disabled, you cannot exactly see from braille display
-what is selected because there is no braille cursor hen there are one or more
-selected characters on the line you are reviewing.
+If "Show selection" is disabled, review cursor is positioned to end of
+selected text when braille is tethered to review, review follows caret and
+selection changes.
 
 To see selection outside of edit controls, browse mode should be used
 where supported.

@@ -19,14 +19,14 @@ addon_info = {
 	"addon_name": "showSelectionWhenBrailleTetheredToReview",
 	# Add-on summary, usually the user visible name of the addon.
 	# Translators: Summary for this add-on
-	# to be shown on installation and add-on information found in Add-ons Manager.
+	# to be shown on installation and add-on information found in add-on store
 	"addon_summary": _("Show selection when braille is tethered to review"),
 	# Add-on description
-	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
+	# Translators: Long description to be shown for this add-on on add-on information from add-on store
 	"addon_description": _("""This add-on shows selection with dots 7 and 8 in edit controls and documents
 when braille is tethered to review."""),
 	# version
-	"addon_version": "2024.1124.0",
+	"addon_version": "2025.0423.0",
 	# Author(s)
 	"addon_author": "Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support
@@ -35,9 +35,9 @@ when braille is tethered to review."""),
 	"addon_sourceURL": "https://github.com/burmancomp/show-selection-when-braille-tethered-to-review",
 	# Documentation file name
 	"addon_docFileName": "readme.html",
-	# Minimum NVDA version supported (e.g. "2018.3.0", minor version is optional)
+	# Minimum NVDA version supported (e.g. "2019.3.0", minor version is optional)
 	"addon_minimumNVDAVersion": "2024.2.0",
-	# Last NVDA version supported/tested (e.g. "2018.4.0", ideally more recent than minimum version)
+	# Last NVDA version supported/tested (e.g. "2024.4.0", ideally more recent than minimum version)
 	"addon_lastTestedNVDAVersion": "2025.1.0",
 	# Add-on update channel (default is None, denoting stable releases,
 	# and for development releases, use "dev".)
@@ -96,6 +96,6 @@ brailleTables = {}
 # If your add-on includes custom speech symbol dictionaries (most will not), fill out this dictionary.
 # Each key is the name of the dictionary,
 # with keys inside recording the following attributes:
-# displayName (name of the speech dictionary  shown to users and translatable),
+# displayName (name of the speech dictionary shown to users and translatable),
 # mandatory (True when always enabled, False when not.
 symbolDictionaries = {}
