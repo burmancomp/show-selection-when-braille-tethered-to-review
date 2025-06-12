@@ -133,6 +133,9 @@ def update(self) -> None:
 		# If it detects selection brailleCursorPos is None.
 		self._fakeSelection = self._collapsedReviewPosition()
 		super(ReviewTextInfoRegion, self).update()
+		if not config.conf["braille"]["showSelection"]:
+			self.brailleSelectionStart = self.brailleSelectionEnd = None
+			return
 		brailleCursorPos: int = self.brailleCursorPos
 		# Update region with selection
 		self._fakeSelection = fakeSelection
