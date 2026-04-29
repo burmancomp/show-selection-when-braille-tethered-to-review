@@ -4,6 +4,10 @@
 
 Stable version
 
+## 2025.0815.0:
+
+* Testing compatibility with 2026.1.
+
 ## 2025.0612.0:
 
 Stable version
