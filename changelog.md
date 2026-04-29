@@ -1,5 +1,9 @@
 # What's new
 
+## 2026.0429.0:
+
+Stable version
+
 ## 2025.0612.0:
 
 Stable version
