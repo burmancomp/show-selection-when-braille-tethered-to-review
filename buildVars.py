@@ -24,10 +24,10 @@ addon_info = AddonInfo(
 	addon_description=_("""This add-on shows selection with dots 7 and 8 in edit controls and documents
 when braille is tethered to review."""),
 	# version
-	addon_version="2025.0815.0",
+	addon_version="2026.0501.0",
 	# Brief changelog for this version
 	# Translators: what's new content for the add-on version to be shown in the add-on store
-	addon_changelog=_("""Testing compatibility with NVDA version 2026."""),
+	addon_changelog=_("""Handles _ctypes.COMError exception when there is no selection."""),
 	# Author(s)
 	addon_author="Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support

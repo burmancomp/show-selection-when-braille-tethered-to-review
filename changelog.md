@@ -1,5 +1,9 @@
 # What's new
 
+## 2026.0501.0:
+
+* Handles _ctypes.COMError exception when there is no selection.
+
 ## 2025.0815.0:
 
 * Testing compatibility with 2026.1.
