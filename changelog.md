@@ -1,8 +1,12 @@
 # What's new
 
-## 2026.0429.0:
+## 2026.0505.0:
 
 Stable version
+
+## 2026.0501.0:
+
+* Handles _ctypes.COMError exception when there is no selection.
 
 ## 2025.0815.0:
 

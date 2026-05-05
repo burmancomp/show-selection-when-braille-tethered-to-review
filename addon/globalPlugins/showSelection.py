@@ -11,6 +11,7 @@ import eventHandler
 import queueHandler
 import winVersion
 import globalCommands
+import _ctypes
 
 from braille import (
 	ReviewTextInfoRegion,
@@ -37,7 +38,7 @@ def _selectionHelper(self) -> textInfos.TextInfo:
 	"""
 	try:
 		info: textInfos.TextInfo = self.obj.makeTextInfo(textInfos.POSITION_SELECTION)
-	except (LookupError, RuntimeError):
+	except (LookupError, RuntimeError, _ctypes.COMError):
 		self._realSelection = self._reviewPos = None
 		return self._collapsedReviewPosition()
 	# Cursor
