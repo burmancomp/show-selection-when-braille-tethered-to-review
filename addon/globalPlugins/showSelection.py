@@ -13,8 +13,10 @@ import winVersion
 import globalCommands
 import _ctypes
 
-from braille import (
+from braille.regions.textInfo import (
 	ReviewTextInfoRegion,
+)
+from braille.regions._routing import (
 	_routingShouldMoveSystemCaret,
 )
 from config.configFlags import BrailleMode

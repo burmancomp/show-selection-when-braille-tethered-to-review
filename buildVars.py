@@ -24,11 +24,10 @@ addon_info = AddonInfo(
 	addon_description=_("""This add-on shows selection with dots 7 and 8 in edit controls and documents
 when braille is tethered to review."""),
 	# version
-	addon_version="2026.0505.0",
+	addon_version="2026.0626.0",
 	# Brief changelog for this version
 	# Translators: what's new content for the add-on version to be shown in the add-on store
-	addon_changelog=_("""Unhandled exception caused misfunctionality
-at least in Thunderbird message compose window when text was cut to clipboard."""),
+	addon_changelog=_("""Changes required due to splitting braille.py into a package in NVDA code."""),
 	# Author(s)
 	addon_author="Burman's Computer and Education Ltd. <otayhteytta@burmanintk.fi>",
 	# URL for the add-on documentation support

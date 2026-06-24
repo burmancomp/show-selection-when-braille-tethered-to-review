@@ -1,5 +1,13 @@
 # What's new
 
+## 2026.0626.0:
+
+Stable version
+
+## 2026.0624.0:
+
+* Changes required due to splitting braille.py into a package in NVDA code.
+
 ## 2026.0505.0:
 
 Stable version
