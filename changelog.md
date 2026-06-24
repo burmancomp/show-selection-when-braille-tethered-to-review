@@ -1,5 +1,9 @@
 # What's new
 
+## 2026.0624.0:
+
+* Changes required due to splitting braille.py into a package in NVDA code.
+
 ## 2026.0501.0:
 
 * Handles _ctypes.COMError exception when there is no selection.
